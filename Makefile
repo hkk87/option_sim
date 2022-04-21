@@ -1,4 +1,4 @@
-.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint lint/flake8
+.PHONY: clean clean-build clean-pyc clean-test coverage dist docs help install lint lint/flake8 test
 .DEFAULT_GOAL := help
 
 define BROWSER_PYSCRIPT
@@ -54,6 +54,7 @@ lint: lint/flake8 ## check style
 
 test: ## run tests quickly with the default Python
 	pytest
+	PYTHONPATH=. pytest
 
 test-all: ## run tests on every Python version with tox
 	tox

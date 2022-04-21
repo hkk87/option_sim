@@ -4,4 +4,4 @@ __author__ = """Her Kerz"""
 __email__ = 'hgkerz@gmail.com'
 __version__ = '0.1.0'
 
-from . import model
+from option_sim import model

@@ -1,6 +1,6 @@
 import pytest
 from option_sim.model import bs_opt, delta, vega, theta, rho, gamma
-from option_sim.model.bs import implied_vol
+from option_sim.model import implied_vol
 
 class TestBS:
     def test_call(self):
