@@ -1,5 +1,6 @@
 import numpy as np
-from option_sim.model.bs import bs_opt
+from option_sim.model.bs import bs_opt, delta, gamma, vega, theta, rho
+import matplotlib.pyplot as plt
 
 class Strategy: 
     """ """
@@ -12,7 +13,7 @@ class Strategy:
 
         else: 
             self.legs_tuple = legs
-            self.legs_array = np.array(legs)[:,:-1].astype(int)
+            self.legs_array = np.array(legs)[:,:-1].astype(float)
             self.qty_array = self.legs_array[:,0]
             self.derivative_price_array = self.legs_array[:,2]
             self.initial_investment = self.derivative_price_array * self.qty_array
@@ -37,6 +38,7 @@ class Strategy:
     def strategy_payoff(self):
         if np.shape(self.legs_tuple) != (4,):
             mean_strike = np.mean(self.legs_array, axis=0)[1]
+
         else: 
             qty, strike, derivative_price, option_type = self.legs_tuple
            
@@ -65,7 +67,7 @@ class Strategy:
 
     
 
-    def derivatives_evolution(self, days_to_expire, vol, rf):
+    def derivatives_evolution(self, DTE, vol, rf):
         underlying_strategy_price_range = self.strategy_payoff()[:,0]
         derivative_price_evolution_list = []
         for leg in self.legs_tuple:
@@ -77,7 +79,7 @@ class Strategy:
             bs_input_matrix = np.stack(
                                         (underlying_strategy_price_range,
                                         np.ones_like(underlying_strategy_price_range) * strike,
-                                        np.ones_like(underlying_strategy_price_range) * days_to_expire / 365,
+                                        np.ones_like(underlying_strategy_price_range) * DTE / 365,
                                         np.ones_like(underlying_strategy_price_range) * vol,
                                         np.ones_like(underlying_strategy_price_range) * rf,
                                         np.ones_like(underlying_strategy_price_range) * cp
@@ -91,13 +93,74 @@ class Strategy:
 
         return underlying_strategy_price_range, derivative_price_evolution_array
 
-    def strategy_evolution(self, days_to_expire, vol, rf, output_total= True):
+    def strategy_evolution(self, DTE, vol, rf, output_total= True):
 
-        price_range, derivative_price_evolution_array = self.derivatives_evolution(days_to_expire, vol, rf)
+        price_range, derivative_price_evolution_array = self.derivatives_evolution(DTE, vol, rf)
         investment_evolution = derivative_price_evolution_array * self.qty_array - self.initial_investment
         
         if output_total == True: investment_evolution = np.sum(investment_evolution, axis = 1)
         
         return np.stack((price_range, investment_evolution), axis=1)
 
-print(Strategy(1,100,1,'c').strategy_payoff())
+    def plot_strategy(self,vol,rf, *DTE):
+        price_range, payoff = self.strategy_payoff().T
+        fig, ax = plt.subplots(1,1)
+
+        ax.plot(
+            price_range,
+            payoff,
+            label = 'Strategy Payoff'
+        )
+
+        if DTE:
+            for dte in DTE[0]:
+                price_range, market_price = self.strategy_evolution(dte, vol, rf).T
+                ax.plot(
+                        price_range,
+                        market_price,
+                        label = f'Days to expiration {dte}'
+                        )
+
+        plt.legend()
+        plt.show()
+
+    def greeks(self, spot_price, dte, volatlity, rf):
+        greeks_dict = {}
+        if np.shape(self.legs_tuple) == (4,):
+            qty, strike, derivative_price, option_type = self.legs_tuple
+
+            if option_type == 'c': cp = 1
+            else: cp = -1
+
+            greeks_dict[self.legs_tuple] = {
+                                            'delta' : delta(spot_price, strike, dte, volatlity, rf, cp) * qty,
+                                            'gamma' : gamma(spot_price, strike, dte, volatlity, rf, cp) * qty,
+                                            'vega' : vega(spot_price, strike, dte, volatlity, rf, cp) * qty,
+                                            'theta' : theta(spot_price, strike, dte, volatlity, rf, cp) * qty,
+                                            'rho' : rho(spot_price, strike, dte, volatlity, rf, cp) * qty
+                                            }
+
+        else:
+            for leg in self.legs_tuple:
+                qty, strike, derivative_price, option_type = leg
+
+                if option_type == 'c': cp = 1
+                else: cp = -1
+                print((spot_price, strike, dte, volatlity, rf, cp))
+                greeks_dict[leg] = {
+                                    'delta' : delta(spot_price, strike, dte, volatlity, rf, cp) * qty,
+                                    'gamma' : gamma(spot_price, strike, dte, volatlity, rf, cp) * qty,
+                                    'vega' : vega(spot_price, strike, dte, volatlity, rf, cp) * qty,
+                                    'theta' : theta(spot_price, strike, dte, volatlity, rf, cp) * qty,
+                                    'rho' : rho(spot_price, strike, dte, volatlity, rf, cp) * qty
+                                   }
+
+            greeks_dict['Total'] = {
+                                    'delta' : sum(x['delta'] for x in greeks_dict.values()),
+                                    'gamma' : sum(x['gamma'] for x in greeks_dict.values()),
+                                    'vega' : sum(x['vega'] for x in greeks_dict.values()),
+                                    'theta' : sum(x['theta'] for x in greeks_dict.values()),
+                                    'rho' : sum(x['rho'] for x in greeks_dict.values()),
+                                    }                                    
+
+        return greeks_dict

@@ -10,3 +10,5 @@ twine==1.14.0
 
 pytest==6.2.4
 
+numpy==1.22.2
+sympy==1.10.1
