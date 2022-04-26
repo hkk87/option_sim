@@ -1,5 +1,5 @@
 import pytest
-from option_sim.model.strategies import Strategy
+from option_sim.strategy.strategies import Strategy
 import numpy as np
 
 class TestStrategies:
