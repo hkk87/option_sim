@@ -9,3 +9,8 @@ def get_price(ticker, period, interval, start = None, end = None):
     
     return df
 
+def change_float(x):
+    try:
+        return float(x)
+    except:
+        return x

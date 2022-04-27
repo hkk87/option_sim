@@ -1,6 +1,7 @@
 import numpy as np
 from option_sim.model.bs import bs_opt, delta, gamma, vega, theta, rho
 import matplotlib.pyplot as plt
+import pandas as pd
 
 class Strategy: 
     """ """
@@ -44,7 +45,7 @@ class Strategy:
            
             return self.payoff()
 
-        underlying_strategy_price_range = np.linspace(mean_strike * 0.8, mean_strike * 1.2, 41)
+        underlying_strategy_price_range = np.linspace(mean_strike * 0.75, mean_strike * 1.25, 41)
         strategy_payoff = np.zeros(41)
 
         for leg in self.legs_tuple:
@@ -58,7 +59,6 @@ class Strategy:
                     )
 
             strategy_payoff = np.add(strategy_payoff, single_payoff * qty)
-
         return np.stack((underlying_strategy_price_range, strategy_payoff), axis=1)
 
     @staticmethod
