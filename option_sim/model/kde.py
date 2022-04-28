@@ -29,3 +29,15 @@ def generate_path(df, n_days, n_rolling=40):
 
     return pd.DataFrame( forecast, columns=['Close']).set_index(forecast_date)
 
+def generate_path_date(df, expiration_date, n_rolling=40):
+    
+    forecast_date = pd.bdate_range(df['Date'].iloc[-1], expiration_date)
+
+    kde, last_price = generate_kde(df, n_rolling = 40)
+    path = 1 + kde.sample(len(forecast_date)-1)
+    
+    forecast = np.hstack((np.array(last_price), path.cumprod() * last_price))
+
+    return pd.DataFrame( forecast, columns=['Close']).set_index(forecast_date)
+
+
